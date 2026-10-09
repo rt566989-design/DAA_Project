@@ -60,10 +60,12 @@ def run_demo(scenario_preset: str = "medium", save_charts: bool = True):
         GeneticAlgorithmScheduler(population_size=40, generations=30, seed=42)
     ]
 
+
     benchmark_records = []
     best_schedule = None
     best_algo_name = ""
     best_fitness = -1.0
+
 
     for sch in schedulers:
         sched, meta, eval_res = run_single_scheduler(sch, employees, days, reqs, rules)
