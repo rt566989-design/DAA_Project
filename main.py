@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 from core.models import Employee, ShiftType, ConstraintRules
 from core.data_generator import ScenarioGenerator
 from core.evaluator import ScheduleEvaluator, EvaluationResult
+from core.shift_manager import ShiftChangeManager, ReplacementCandidate, ShiftOperationResult
 from algorithms.greedy import GreedyScheduler
 from algorithms.backtracking import BacktrackingScheduler
 from algorithms.branch_and_bound import BranchAndBoundScheduler
@@ -126,6 +127,76 @@ def run_demo(scenario_preset: str = "medium", save_charts: bool = True):
         print(f"    - CSV Export:         {csv_path}")
         print(f"    - Excel Workbook:     {excel_path}")
 
+    # Run Automated Shift Change & Replacement Demonstration
+    demonstrate_shift_change(best_schedule, employees, reqs, rules)
+
+
+def demonstrate_shift_change(schedule, employees, reqs, rules):
+    """Demonstrates automated shift change, peer swaps, and emergency leave re-balancing."""
+    print("\n" + "=" * 88)
+    print("      AUTOMATED DYNAMIC SHIFT CHANGE & REPLACEMENT DEMO")
+    print("=" * 88)
+    print("[*] Simulating Automated Shift Adjustment & Emergency Absence Handling...")
+
+    # Case 1: Automated Shift Change / Peer Swap
+    test_day = 0
+    assigned_morning = list(schedule.get_assigned(test_day, ShiftType.MORNING.value))
+    if assigned_morning:
+        emp_id = assigned_morning[0]
+        emp_obj = next(e for e in employees if e.id == emp_id)
+        target_shift = ShiftType.EVENING.value
+        print(f"\n[Case 1] Automatic Shift Change Request:")
+        print(f"  - Staff '{emp_obj.name}' requests to change shift from Morning -> {target_shift} on Day {test_day + 1}.")
+        print(f"  - Checking hard constraints (rest periods, weekly limits) & searching optimal swap partner...")
+
+        result = ShiftChangeManager.auto_change_shift(
+            schedule=schedule,
+            day=test_day,
+            emp_id=emp_id,
+            target_shift=target_shift,
+            employees=employees,
+            shift_requirements=reqs,
+            rules=rules
+        )
+        if result.success:
+            print(f"  [OK] {result.message}")
+            if result.evaluation_after:
+                print(f"  - Updated Jain's Fairness Index: {result.evaluation_after.jains_fairness_index:.4f}")
+                print(f"  - Constraint Violations: {result.evaluation_after.hard_violations_count}")
+        else:
+            print(f"  [Notice] {result.message}")
+
+    # Case 2: Emergency Leave & Auto-Replacement
+    test_day_leave = min(2, schedule.days - 1)
+    assigned_workers = []
+    for s in ShiftType.all_shifts():
+        for eid in schedule.get_assigned(test_day_leave, s):
+            assigned_workers.append((eid, s))
+
+    if assigned_workers:
+        sick_emp_id, sick_shift = assigned_workers[0]
+        sick_emp = next(e for e in employees if e.id == sick_emp_id)
+        print(f"\n[Case 2] Emergency Absence & Auto-Replacement:")
+        print(f"  - Staff '{sick_emp.name}' requests Emergency Leave on Day {test_day_leave + 1} ({sick_shift} Shift).")
+        print(f"  - System evaluates candidate pool with multi-objective scoring (Fairness + Preferences)...")
+
+        leave_res = ShiftChangeManager.handle_emergency_leave(
+            schedule=schedule,
+            day=test_day_leave,
+            emp_id=sick_emp_id,
+            employees=employees,
+            shift_requirements=reqs,
+            rules=rules
+        )
+        if leave_res.success:
+            print(f"  [OK] {leave_res.message}")
+            if leave_res.evaluation_after:
+                print(f"  - Post-Replacement Fairness Index: {leave_res.evaluation_after.jains_fairness_index:.4f}")
+                print(f"  - Post-Replacement Violations: {leave_res.evaluation_after.hard_violations_count}")
+        else:
+            print(f"  [Notice] {leave_res.message}")
+    print("=" * 88)
+
 
 def run_benchmark():
     print_banner()
@@ -148,14 +219,21 @@ def main():
     parser = argparse.ArgumentParser(description="Employee Shift Scheduling System (DAA)")
     parser.add_argument("--demo", action="store_true", help="Run comprehensive side-by-side demo")
     parser.add_argument("--benchmark", action="store_true", help="Run scaling complexity benchmarks")
+    parser.add_argument("--shift-change", action="store_true", help="Demonstrate automated shift change & emergency replacement")
     parser.add_argument("--preset", type=str, default="medium", choices=["small", "medium", "large"], help="Scenario preset size")
     args = parser.parse_args()
 
     if args.benchmark:
         run_benchmark()
+    elif args.shift_change:
+        employees, days, reqs, rules = ScenarioGenerator.get_preset_scenario(args.preset)
+        scheduler = GreedyScheduler()
+        schedule, _ = scheduler.solve(employees, days, reqs, rules)
+        demonstrate_shift_change(schedule, employees, reqs, rules)
     else:
         run_demo(scenario_preset=args.preset)
 
 
 if __name__ == "__main__":
     main()
+

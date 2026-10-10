@@ -17,13 +17,18 @@
   - Maximum 1 shift per employee per day (no double booking).
   - Ergonomic rest rule (Night shift $\to$ Morning shift transition strictly prohibited).
   - Weekly overtime cap and leave/unavailability request enforcement.
+- **🔄 Automated Shift Change & Emergency Replacement Engine:**
+  - **1-Click Auto Shift Change**: Automatically moves employee to target shift or identifies the optimal peer swap partner if full.
+  - **Peer-to-Peer Shift Swapping**: Validates mutual constraint safety (rest periods, leaves, weekly limits) in $O(1)$ time and swaps shifts.
+  - **Emergency Leave & Auto-Replacement**: When an employee reports sick or takes sudden leave, the system evaluates all candidates via multi-objective scoring (Fairness + Preferences) and assigns the best legal replacement.
+  - **Constraint Guarantee**: Strictly prevents double-booking, ergonomic night $\to$ morning conflicts, and weekly hour violations.
 - **Fairness & Multi-Objective Evaluation:**
   - **Jain's Fairness Index** ($J \in [1/N, 1.0]$) for measuring workload balance.
   - Employee shift preference satisfaction percentage.
   - Hard constraint violation detection and tracking.
 - **Two User Interfaces:**
-  - 🌐 **Interactive Streamlit Web Dashboard**: Live sliders, interactive roster grids, real-time benchmark charts, and download to CSV / Excel.
-  - 💻 **Rich Terminal CLI**: One-command side-by-side benchmark with terminal tables and Matplotlib graph exports.
+  - 🌐 **Interactive Streamlit Web Dashboard**: Live sliders, interactive roster grids, real-time benchmark charts, download to CSV / Excel, and dedicated **Auto Shift Change Workspace**.
+  - 💻 **Rich Terminal CLI**: One-command side-by-side benchmark with terminal tables, Matplotlib graph exports, and automated shift-change simulation.
 - **Academic Project Submission Material:**
   - Full formal project report in [DAA_PROJECT_REPORT.md](DAA_PROJECT_REPORT.md).
   - Top Viva Voce questions & answers prepared for lab evaluations.
@@ -72,18 +77,25 @@ Outputs will be saved automatically to the `output/` directory:
 - `output/schedule_roster.csv` (CSV schedule export)
 - `output/schedule_report.xlsx` (Multi-sheet Excel report)
 
-### 4. Run Scaling Benchmark
+### 4. Run Automated Shift Change & Replacement Demo
+To run the automated shift change, peer swap, and emergency leave simulation:
+
+```bash
+python main.py --shift-change
+```
+
+### 5. Run Scaling Benchmark
 To evaluate how algorithms scale across Small, Medium, and Large scenarios:
 
 ```bash
 python main.py --benchmark
 ```
 
-### 5. Run Unit Tests
-To verify constraint enforcement and algorithmic correctness:
+### 6. Run Unit Tests
+To verify constraint enforcement, algorithmic correctness, and shift management:
 
 ```bash
-python -m unittest tests/test_algorithms.py
+python -m unittest discover tests
 ```
 
 ---
@@ -92,8 +104,8 @@ python -m unittest tests/test_algorithms.py
 
 ```
 DAA_Experiment1_code/
-├── app.py                      # Interactive Streamlit Web Application
-├── main.py                     # Command-line driver & benchmark runner
+├── app.py                      # Interactive Streamlit Web Application (5 Tabs + Auto Shift Change Workspace)
+├── main.py                     # Command-line driver, benchmark runner & shift-change demo
 ├── requirements.txt            # Python dependencies
 ├── DAA_PROJECT_REPORT.md       # Comprehensive academic lab & capstone project report
 ├── README.md                   # Project documentation & user guide
@@ -102,6 +114,7 @@ DAA_Experiment1_code/
 │   ├── __init__.py
 │   ├── models.py               # Employee, Shift, Schedule, and Constraint definitions
 │   ├── evaluator.py            # Hard constraint validator & Jain's Fairness Index calculator
+│   ├── shift_manager.py        # Automated shift change, peer swaps & emergency replacement engine
 │   └── data_generator.py       # Realistic hospital & tech support dataset generator
 │
 ├── algorithms/
@@ -118,7 +131,8 @@ DAA_Experiment1_code/
 │
 ├── tests/
 │   ├── __init__.py
-│   └── test_algorithms.py      # Unit tests verifying all 4 schedulers
+│   ├── test_algorithms.py      # Unit tests verifying all 4 offline schedulers
+│   └── test_shift_manager.py   # Unit tests verifying auto-shift change, swaps, and emergency leaves
 │
 └── output/                     # Auto-generated benchmark plots, heatmaps, and spreadsheets
 ```
@@ -135,6 +149,9 @@ DAA_Experiment1_code/
    - A scale-independent metric $J = \frac{(\sum w_i)^2}{N \sum w_i^2} \in [1/N, 1.0]$. A score of $1.0$ indicates equal workload balance across all employees.
 4. **How does Branch & Bound prune?**
    - It calculates an admissible lower bound $LB(u)$ for partial schedule $u$. If $LB(u) \ge \text{BestCostKnown}$, subtree $u$ is pruned because it can never yield an optimal solution.
+5. **How does Dynamic Shift Change work without re-running solvers?**
+   - Performs localized $O(1)$ constraint checking across all hard rules and finds the optimal replacement candidate in $O(N)$ time via multi-objective greedy choice scoring, preserving 100% feasibility and fairness balance in sub-milliseconds.
 
 ---
 *Developed for Design and Analysis of Algorithms (DAA) Laboratory & Academic Submission.*
+
