@@ -103,7 +103,7 @@ python -m unittest discover tests
 ## 📁 Project Directory Structure
 
 ```
-DAA_Experiment1_code/
+DAA_Project/
 ├── app.py                      # Interactive Streamlit Web Application (5 Tabs + Auto Shift Change Workspace)
 ├── main.py                     # Command-line driver, benchmark runner & shift-change demo
 ├── requirements.txt            # Python dependencies
