@@ -3,6 +3,8 @@
 > **Design and Analysis of Algorithms (DAA) Laboratory / Capstone Project**  
 > A multi-paradigm comparative study solving the NP-Hard Employee Shift Scheduling Problem using **Greedy Heuristics**, **Backtracking (CSP with MRV)**, **Branch and Bound (DFBnB)**, and **Genetic Algorithms**.
 
+[![Deploy to Streamlit Cloud](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=rt566989-design/DAA_Project&branch=main&main_file=app.py)
+
 ---
 
 ## 🌟 Key Features
